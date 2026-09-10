@@ -49,7 +49,7 @@ export default function Host() {
       <div className="join-callout"><span>JOIN ON YOUR PHONE</span><b>{typeof window !== "undefined" ? `${window.location.host}/play` : "/play"}</b><small>ENTER ROOM CODE</small><strong>{game.code}</strong></div>
       <h2>{game.players.length ? `${game.players.length} ${game.players.length === 1 ? "PLAYER" : "PLAYERS"} ARE IN` : "WAITING FOR TROUBLEMAKERS..."}</h2>
       <div className="player-wall">{game.players.map((player, index) => <div key={player.id}><span>{String(index + 1).padStart(2,"0")}</span>{player.name}<b>✓</b></div>)}</div>
-      {error && <p className="error">{error}</p>}<button className="primary" disabled={game.players.length < 2} onClick={() => act("start")}>START THE CHAOS <span>→</span></button>
+      {error && <p className="error">{error}</p>}<button className="primary" disabled={game.players.length === 0} onClick={() => act("start")}>START THE CHAOS <span>→</span></button>
     </section>}
 
     {game?.phase === "question" && round && <section className="question panel-enter">

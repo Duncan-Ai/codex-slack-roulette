@@ -14,6 +14,8 @@ npm run dev
 3. Each player enters the four-letter room code and chooses their roster name.
 4. The host starts the game, waits for everyone to answer, and reveals each result.
 
+Only one player is required, so the complete flow can be tested solo with the host screen and one `/play` tab.
+
 Phones poll the game API once per second, so they follow the host automatically through questions, reveals, score checks, and the final result.
 
 ## Deployment note

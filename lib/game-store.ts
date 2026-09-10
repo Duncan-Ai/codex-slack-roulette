@@ -45,7 +45,7 @@ export function answer(game: Game, playerId: string, value: string) {
   if (!game.answers[playerId]) game.answers[playerId] = { value, order: Object.keys(game.answers).length };
 }
 export function hostAction(game: Game, action: string) {
-  if (action === "start" && game.phase === "lobby") { if (game.players.length < 2) throw new Error("At least two players are required."); game.phase = "question"; }
+  if (action === "start" && game.phase === "lobby") { if (game.players.length === 0) throw new Error("At least one player is required."); game.phase = "question"; }
   else if (action === "reveal" && game.phase === "question") {
     const round = rounds[game.roundIndex];
     for (const player of game.players) { const response = game.answers[player.id]; if (response?.value === round.answer) player.score += (100 + Math.max(0, 50 - response.order * 10)) * (round.bonus ? 2 : 1); }
