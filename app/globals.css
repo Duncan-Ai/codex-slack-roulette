@@ -1,26 +1,59 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
+:root { --ink:#171515; --paper:#f6f0e4; --red:#ff4d3d; --yellow:#ffd84d; --blue:#476cff; --muted:#766f68; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--ink); color:var(--ink); font-family:Arial, Helvetica, sans-serif; }
+button { font:inherit; }
+.game-shell { min-height:100vh; background:var(--paper); background-image:radial-gradient(#d7d0c5 1px, transparent 1px); background-size:18px 18px; display:flex; flex-direction:column; overflow:hidden; }
+header { height:88px; padding:0 5vw; display:flex; align-items:center; justify-content:space-between; border-bottom:3px solid var(--ink); background:var(--paper); }
+.logo { position:relative; display:flex; flex-direction:column; font-weight:900; line-height:.78; transform:rotate(-2deg); }
+.logo span { font-size:12px; letter-spacing:2.4px; padding-left:3px; }
+.logo strong { font-size:29px; letter-spacing:-1.5px; }
+.logo i { position:absolute; right:-24px; top:5px; color:var(--red); font-style:normal; font-size:22px; }
+.header-right { font-size:12px; font-weight:900; letter-spacing:2px; display:flex; align-items:center; gap:10px; }
+.live-dot { width:10px; height:10px; background:var(--red); border-radius:50%; box-shadow:0 0 0 4px #ff4d3d28; }
+section { width:min(1000px, 90vw); margin:auto; padding:60px 0; }
+.panel-enter { animation:pop .35s ease-out both; }
+@keyframes pop { from { opacity:0; transform:translateY(12px) scale(.99) } }
+.eyebrow { display:inline-block; background:var(--yellow); border:2px solid var(--ink); box-shadow:4px 4px 0 var(--ink); padding:9px 13px; font-size:12px; font-weight:900; letter-spacing:1.8px; transform:rotate(-1deg); }
+h1 { margin:25px 0 6px; font-size:clamp(64px, 11vw, 126px); letter-spacing:-7px; line-height:.73; font-weight:1000; }
+h1 em { color:var(--red); font-style:normal; -webkit-text-stroke:3px var(--ink); text-shadow:7px 7px 0 var(--yellow); }
+.lede { color:var(--muted); font-size:18px; font-weight:700; }
+.roster-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:35px 0; }
+.player-chip { min-height:58px; padding:0 14px; display:flex; align-items:center; gap:12px; border:2px solid var(--ink); background:#fffdf8; cursor:pointer; font-weight:900; text-align:left; box-shadow:3px 3px 0 transparent; transition:.15s; }
+.player-chip:hover { transform:translate(-2px,-2px); box-shadow:4px 4px 0 var(--ink); }
+.player-chip span { font-size:10px; color:#aaa; }
+.player-chip b { margin-left:auto; font-size:20px; }
+.player-chip.selected { background:var(--ink); color:white; box-shadow:4px 4px 0 var(--red); transform:translate(-2px,-2px); }
+.lobby-footer { display:flex; justify-content:space-between; align-items:center; margin-top:30px; }
+.lobby-footer>div { display:flex; align-items:center; gap:12px; }
+.lobby-footer>div strong { font-size:42px; }
+.lobby-footer>div span { max-width:80px; font-size:10px; font-weight:900; letter-spacing:1px; }
+.primary { border:3px solid var(--ink); background:var(--red); color:white; padding:17px 22px; font-weight:900; letter-spacing:1.2px; box-shadow:6px 6px 0 var(--ink); cursor:pointer; transition:.15s; }
+.primary:hover:not(:disabled) { transform:translate(3px,3px); box-shadow:3px 3px 0 var(--ink); }
+.primary:disabled { filter:grayscale(1); opacity:.4; cursor:not-allowed; }
+.primary span { margin-left:25px; }
+.question { text-align:center; max-width:1080px; }
+.round-meta { display:flex; align-items:center; gap:12px; text-align:left; }
+.mode,.bonus { padding:8px 11px; background:var(--blue); color:white; border:2px solid var(--ink); font-weight:900; font-size:11px; letter-spacing:1.2px; box-shadow:3px 3px 0 var(--ink); }
+.bonus { background:var(--yellow); color:var(--ink); transform:rotate(2deg); }
+.answering { margin-left:auto; color:var(--muted); font-size:13px; }.answering b{color:var(--ink)}
+.claim { margin:48px 0 12px; font-size:14px; font-weight:700; color:var(--muted); }.claim strong{color:var(--red)}
+blockquote { max-width:900px; margin:0 auto 45px; font-size:clamp(36px, 6vw, 67px); font-weight:1000; line-height:1; letter-spacing:-3px; }
+.choices { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px; max-width:850px; margin:auto; text-align:left; }
+.choices button { border:2px solid var(--ink); background:white; min-height:68px; padding:13px 18px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:14px; box-shadow:3px 3px 0 var(--ink); transition:.12s; }
+.choices button:hover { background:var(--yellow); transform:translate(-2px,-2px); box-shadow:5px 5px 0 var(--ink); }
+.choices button span { width:31px; height:31px; flex:none; display:grid; place-items:center; background:var(--ink); color:white; }
+.author-choices { grid-template-columns:repeat(4,1fr); max-width:950px; gap:9px; }.author-choices button{min-height:52px;padding:9px 11px}.author-choices button span{width:25px;height:25px}
+.privacy { color:#948c83; font-size:11px; font-weight:700; margin-top:25px; }
+.reveal { text-align:center; max-width:900px; }
+.stamp { display:inline-block; background:#25a96b; color:white; border:3px solid var(--ink); box-shadow:5px 5px 0 var(--ink); padding:10px 18px; font-size:18px; font-weight:1000; letter-spacing:2px; transform:rotate(-3deg); }.stamp.fake{background:var(--red);transform:rotate(3deg)}
+.reveal h2,.scoreboard h2 { margin:30px 0 15px; font-size:clamp(40px,7vw,72px); line-height:.95; letter-spacing:-4px; }
+.original { font-size:19px; color:var(--muted); font-style:italic; }
+.vote-split { margin:35px auto; border:3px solid var(--ink); background:white; padding:24px; text-align:left; box-shadow:7px 7px 0 var(--ink); }
+.vote-split h3 { margin:0 0 18px; font-size:11px; letter-spacing:2px; }
+.vote-row { display:grid; grid-template-columns:130px 1fr 25px; gap:12px; align-items:center; margin:12px 0; }.vote-row>b{overflow:hidden;text-overflow:ellipsis}.vote-row span{grid-column:2/4;color:var(--muted);font-size:11px;margin-top:-8px}.bar{height:12px;background:#e7e1d7}.bar i{display:block;height:100%;background:#b7afa6;min-width:3px}.vote-row.correct .bar i{background:#25a96b}.vote-row.correct>b{color:#168552}
+.scoreboard { text-align:center; max-width:780px; }
+.rank-list { margin:35px 0; text-align:left; }.rank-list>div{min-height:60px;display:flex;align-items:center;border-bottom:2px solid var(--ink);padding:8px 15px;gap:15px;background:#fffdf8}.rank-list .leader{background:var(--yellow);border:3px solid var(--ink);box-shadow:5px 5px 0 var(--ink);margin-bottom:8px;transform:rotate(-.5deg)}.rank{font-size:12px;color:var(--muted);font-weight:900}.rank-list b{font-size:20px}.rank-list small{font-size:9px;letter-spacing:1px;background:var(--ink);color:white;padding:5px}.rank-list strong{margin-left:auto;font-size:22px}.rank-list em{font-style:normal;font-size:9px;color:var(--muted)}
+footer { min-height:42px; margin-top:auto; display:flex; justify-content:center; align-items:center; gap:24px; background:var(--ink); color:white; font-size:9px; font-weight:900; letter-spacing:2px; }footer i{color:var(--yellow)}
+@media(max-width:700px){header{height:70px;padding:0 20px}.header-right{font-size:9px}section{padding:35px 0}.roster-grid{grid-template-columns:repeat(2,1fr)}h1{letter-spacing:-4px}.lobby-footer{align-items:flex-end}.lobby-footer>div span{display:none}.primary span{margin-left:10px}.round-meta{flex-wrap:wrap}.answering{width:100%;margin:8px 0 0;text-align:center}.author-choices{grid-template-columns:repeat(2,1fr)}blockquote{letter-spacing:-2px;margin-bottom:30px}.choices{grid-template-columns:1fr}.vote-row{grid-template-columns:90px 1fr 20px}.rank-list small{display:none}footer{gap:8px;letter-spacing:.6px}}
