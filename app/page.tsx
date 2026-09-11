@@ -1,65 +1,76 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+import { useCallback, useEffect, useState } from "react";
+import type { Phase, Player } from "@/lib/game-store";
+import type { Round } from "@/lib/rounds";
+
+type HostGame = { code: string; phase: Phase; roundIndex: number; players: Player[]; answered: string[]; round?: Round; voteSplit?: { key: string; choice: string; names: string[] }[] };
+
+function Logo() { return <div className="logo"><span>SLACK MESSAGE</span><strong>ROULETTE</strong><i>✦</i></div>; }
+
+export default function Host() {
+  const [game, setGame] = useState<HostGame>();
+  const [token, setToken] = useState("");
+  const [error, setError] = useState("");
+
+  const refresh = useCallback(async (code: string, hostToken: string) => {
+    const response = await fetch(`/api/game?code=${code}&token=${hostToken}`, { cache: "no-store" });
+    if (response.ok) setGame(await response.json());
+  }, []);
+
+  async function create() {
+    setError("");
+    const response = await fetch("/api/game", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "create" }) });
+    const data = await response.json(); setToken(data.hostToken); await refresh(data.code, data.hostToken);
+  }
+
+  async function act(action: string) {
+    if (!game) return;
+    const response = await fetch("/api/game", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action, code: game.code, hostToken: token }) });
+    const data = await response.json(); if (!response.ok) setError(data.error); else setGame(data);
+  }
+
+  useEffect(() => {
+    if (!game || game.phase === "end") return;
+    const timer = setInterval(() => refresh(game.code, token), 1000);
+    return () => clearInterval(timer);
+  }, [game, token, refresh]);
+
+  const round = game?.round;
+  const ranked = [...(game?.players ?? [])].sort((a, b) => b.score - a.score);
+  const answerText = round?.mode === "FINISH THE MESSAGE" && round.answer ? round.choices[round.answer.charCodeAt(0) - 65] : round?.answer;
+
+  return <main className="game-shell host-shell">
+    <header><Logo/><div className="header-right"><span className="live-dot"/>{game ? `ROOM ${game.code}` : "HOST SCREEN"}</div></header>
+
+    {!game && <section className="splash panel-enter"><div className="eyebrow">⚡ YOUR TEAM. THEIR MESSAGES.</div><h1>SPIN THE<br/><em>GROUP CHAT.</em></h1><p className="lede">Put this screen where everyone can see it. Players join from their phones.</p><button className="primary" onClick={create}>CREATE A GAME <span>→</span></button></section>}
+
+    {game?.phase === "lobby" && <section className="host-lobby panel-enter">
+      <div className="join-callout"><span>JOIN ON YOUR PHONE</span><b>{typeof window !== "undefined" ? `${window.location.host}/play` : "/play"}</b><small>ENTER ROOM CODE</small><strong>{game.code}</strong></div>
+      <h2>{game.players.length ? `${game.players.length} ${game.players.length === 1 ? "PLAYER" : "PLAYERS"} ARE IN` : "WAITING FOR TROUBLEMAKERS..."}</h2>
+      <div className="player-wall">{game.players.map((player, index) => <div key={player.id}><span>{String(index + 1).padStart(2,"0")}</span>{player.name}<b>✓</b></div>)}</div>
+      {error && <p className="error">{error}</p>}<button className="primary" disabled={game.players.length === 0} onClick={() => act("start")}>START THE CHAOS <span>→</span></button>
+    </section>}
+
+    {game?.phase === "question" && round && <section className="question panel-enter">
+      <div className="round-meta"><span className="mode">{round.mode}</span>{round.bonus && <span className="bonus">2× BONUS ROUND</span>}<span className="answering">ROUND {game.roundIndex + 1} / 20</span></div>
+      {round.mode === "REAL OR FAKE" && <div className="claim">Allegedly posted by <strong>@{round.author.toLowerCase()}</strong></div>}
+      {round.mode === "FINISH THE MESSAGE" && <div className="claim">Complete <strong>@{round.author.toLowerCase()}</strong>’s message</div>}
+      {round.mode === "WHO SAID IT" && <div className="claim">One of your coworkers sent this...</div>}
+      <blockquote>“{round.message}”</blockquote>
+      <div className="waiting-card"><div><b>{game.answered.length}</b><span>OF {game.players.length}<br/>LOCKED IN</span></div><div className="answer-dots">{game.players.map((p) => <i title={p.name} className={game.answered.includes(p.id) ? "done" : ""} key={p.id}/>)}</div></div>
+      <button className="primary" disabled={game.answered.length !== game.players.length} onClick={() => act("reveal")}>REVEAL THE TRUTH <span>→</span></button>
+    </section>}
+
+    {game?.phase === "reveal" && round && <section className="reveal panel-enter">
+      <div className={round.answer === "FAKE" ? "stamp fake" : "stamp"}>{round.mode === "WHO SAID IT" ? `@${round.author}` : round.mode === "FINISH THE MESSAGE" ? `ANSWER ${round.answer}` : round.answer}</div>
+      <h2>{round.mode === "WHO SAID IT" ? `${round.author} said it.` : answerText}</h2>
+      <p className="original">“{round.mode === "FINISH THE MESSAGE" ? `${round.message.replace("...", "")} ${answerText}` : round.message}”</p>
+      <div className="vote-split"><h3>THE DAMAGE REPORT</h3>{game.voteSplit?.map((vote) => <div className={`vote-row ${vote.key === round.answer ? "correct" : ""}`} key={vote.key}><b>{round.mode === "FINISH THE MESSAGE" ? `${vote.key} — ${vote.choice}` : vote.choice}</b><div className="bar"><i style={{width:`${vote.names.length/game.players.length*100}%`}}/></div><strong>{vote.names.length}</strong><span>{vote.names.length} {vote.names.length === 1 ? "player thought" : "players thought"} this: {vote.names.join(", ")}</span></div>)}</div>
+      <button className="primary" onClick={() => act("next")}>{game.roundIndex === 19 ? "FINAL SCORES" : "NEXT ROUND"} <span>→</span></button>
+    </section>}
+
+    {(game?.phase === "score" || game?.phase === "end") && <section className="scoreboard panel-enter"><div className="eyebrow">{game.phase === "end" ? "✦ THAT’S THE GAME ✦" : "SCORE CHECK"}</div><h2>{game.phase === "end" ? "THE RECEIPTS ARE IN" : "CURRENT DAMAGE"}</h2><div className="rank-list">{ranked.map((player,index) => <div className={index === 0 ? "leader" : ""} key={player.id}><span className="rank">{index+1}</span><b>{player.name}</b>{index === 0 && <small>CHAT LORE MASTER</small>}<strong>{player.score.toLocaleString()} <em>PTS</em></strong></div>)}</div><button className="primary" onClick={game.phase === "end" ? create : () => act("continue")}>{game.phase === "end" ? "NEW GAME" : "KEEP SPINNING"} <span>→</span></button></section>}
+    <footer><span>20 ROUNDS</span><i>✦</i><span>ZERO CONTEXT</span><i>✦</i><span>MAXIMUM CONSEQUENCES</span></footer>
+  </main>;
 }
