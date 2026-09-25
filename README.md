@@ -18,9 +18,16 @@ Only one player is required, so the complete flow can be tested solo with the ho
 
 Phones poll the game API once per second, so they follow the host automatically through questions, reveals, score checks, and the final result.
 
-## Deployment note
+## Multiplayer storage
 
-Rooms are held in server memory and are intended for a single long-running Node.js process (`npm run build && npm start`). Restarting the server clears active rooms. For a multi-instance or serverless deployment, replace the map in `lib/game-store.ts` with a shared store such as Redis.
+Local development keeps rooms in server memory automatically. A Vercel deployment requires shared Redis storage so every serverless request reads and updates the same room:
+
+1. In the Vercel project, open **Storage → Create Database**.
+2. Choose an **Upstash Redis** integration and connect it to the project.
+3. Make sure `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are available to Production and Preview deployments. The older `KV_REST_API_URL` and `KV_REST_API_TOKEN` names are also supported.
+4. Redeploy after connecting the database.
+
+Without those variables, the deployed API deliberately returns a configuration error instead of silently creating different copies of a room across serverless instances. Rooms expire after eight hours.
 
 ## Publish on Vercel
 
