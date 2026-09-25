@@ -43,3 +43,5 @@ That screen is served by Vercel before the request reaches this application, so 
 The host screen prints its current origin followed by `/play`, so opening the host on a protected preview deployment will also print a protected player link. Always run the host from the public production domain.
 
 An unauthenticated CLI can create a public preview with `npx vercel deploy --temporary`, but Vercel deletes anonymous deployments after one hour. After expiration, the URL redirects to a Vercel page and can look like a login requirement. Claim the deployment from the URL printed by the CLI before it expires, then disable Deployment Protection for production. The owner signs in once to claim it; players never need to sign in.
+
+Run `npm run deploy:public-preview` whenever an immediately public, login-free test URL is needed. This creates a new URL instead of reusing a protected Git preview deployment.
