@@ -17,11 +17,13 @@ export default function Host() {
 
   const refresh = useCallback(async (code: string, hostToken: string) => {
     const sequence = ++requestSequence.current;
-    const response = await fetch(`/api/game?code=${code}&token=${hostToken}`, { cache: "no-store" });
-    if (response.ok) {
-      const nextGame: HostGame = await response.json();
-      if (sequence === requestSequence.current) setGame((current) => !current || nextGame.revision >= current.revision ? nextGame : current);
-    }
+    try {
+      const response = await fetch(`/api/game?code=${code}&token=${hostToken}`, { cache: "no-store" });
+      if (response.ok) {
+        const nextGame: HostGame = await response.json();
+        if (sequence === requestSequence.current) setGame((current) => !current || nextGame.revision >= current.revision ? nextGame : current);
+      }
+    } catch { /* The next poll retries transient network failures. */ }
   }, []);
 
   async function create() {
@@ -29,8 +31,11 @@ export default function Host() {
     setBusy(true); setError(""); ++requestSequence.current;
     try {
       const response = await fetch("/api/game", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "create" }) });
-      const data = await response.json(); setToken(data.hostToken); await refresh(data.code, data.hostToken);
-    } finally { setBusy(false); }
+      const data = await response.json();
+      if (!response.ok) { setError(data.error ?? "Could not create a game."); return; }
+      setToken(data.hostToken); setGame(data.game);
+    } catch { setError("Could not reach the game server. Please try again."); }
+    finally { setBusy(false); }
   }
 
   async function act(action: string) {
@@ -39,7 +44,8 @@ export default function Host() {
     try {
       const response = await fetch("/api/game", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action, code: game.code, hostToken: token }) });
       const data = await response.json(); if (!response.ok) setError(data.error); else setGame(data);
-    } finally { setBusy(false); }
+    } catch { setError("Could not reach the game server. Please try again."); }
+    finally { setBusy(false); }
   }
 
   useEffect(() => {
@@ -55,7 +61,7 @@ export default function Host() {
   return <main className="game-shell host-shell">
     <header><Logo/><div className="header-right"><span className="live-dot"/>{game ? `ROOM ${game.code}` : "HOST SCREEN"}</div></header>
 
-    {!game && <section className="splash panel-enter"><div className="eyebrow">⚡ YOUR TEAM. THEIR MESSAGES.</div><h1>SPIN THE<br/><em>GROUP CHAT.</em></h1><p className="lede">Put this screen where everyone can see it. Players join from their phones.</p><button className="primary" disabled={busy} onClick={create}>{busy ? "CREATING…" : "CREATE A GAME"} <span>→</span></button></section>}
+    {!game && <section className="splash panel-enter"><div className="eyebrow">⚡ YOUR TEAM. THEIR MESSAGES.</div><h1>SPIN THE<br/><em>GROUP CHAT.</em></h1><p className="lede">Put this screen where everyone can see it. Players join from their phones.</p>{error && <p className="error" role="alert">{error}</p>}<button className="primary" disabled={busy} onClick={create}>{busy ? "CREATING…" : "CREATE A GAME"} <span>→</span></button></section>}
 
     {game?.phase === "lobby" && <section className="host-lobby panel-enter">
       <div className="join-callout"><span>JOIN ON YOUR PHONE</span><b>{typeof window !== "undefined" ? `${window.location.host}/play` : "/play"}</b><small>ENTER ROOM CODE</small><strong>{game.code}</strong></div>

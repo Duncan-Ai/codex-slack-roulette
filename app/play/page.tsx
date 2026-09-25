@@ -13,11 +13,13 @@ export default function Play() {
   const refresh = useCallback(async () => {
     if (!code || !playerId) return;
     const sequence = ++requestSequence.current;
-    const response = await fetch(`/api/game?code=${code}&playerId=${playerId}`, { cache:"no-store" });
-    if (response.ok) {
-      const nextGame: PlayerGame = await response.json();
-      if (sequence === requestSequence.current) setGame((current) => !current || nextGame.revision >= current.revision ? nextGame : current);
-    }
+    try {
+      const response = await fetch(`/api/game?code=${code}&playerId=${playerId}`, { cache:"no-store" });
+      if (response.ok) {
+        const nextGame: PlayerGame = await response.json();
+        if (sequence === requestSequence.current) setGame((current) => !current || nextGame.revision >= current.revision ? nextGame : current);
+      }
+    } catch { /* The next poll retries transient network failures. */ }
   }, [code, playerId]);
   useEffect(() => { if (!playerId) return; const timer = setInterval(refresh, 1000); return () => clearInterval(timer); }, [playerId, refresh]);
 
@@ -27,7 +29,8 @@ export default function Play() {
     try {
       const response = await fetch("/api/game", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({action:"join",code,name}) });
       const data = await response.json(); if (!response.ok) setError(data.error); else { setPlayerId(data.playerId); setGame(data.game); }
-    } finally { setBusy(false); }
+    } catch { setError("Could not reach the game server. Please try again."); }
+    finally { setBusy(false); }
   }
   async function submit(value: string) {
     if (busy) return;
@@ -35,7 +38,8 @@ export default function Play() {
     try {
       const response = await fetch("/api/game", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({action:"answer",code,playerId,value}) });
       const data = await response.json(); if (!response.ok) setError(data.error); else setGame(data);
-    } finally { setBusy(false); }
+    } catch { setError("Could not reach the game server. Please try again."); }
+    finally { setBusy(false); }
   }
   const answered = !!game?.answered.includes(playerId); const round = game?.round;
 

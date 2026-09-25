@@ -13,14 +13,10 @@ const globalGames = globalThis as typeof globalThis & { rouletteGames?: Map<stri
 const memoryGames = globalGames.rouletteGames ??= new Map<string, Game>();
 const ttlSeconds = 60 * 60 * 8;
 
-function assertStore() {
-  if (process.env.VERCEL && !redis) throw new Error("Multiplayer storage is not configured. Connect an Upstash Redis store to this Vercel project.");
-}
 function gameKey(code: string) { return `roulette:game:${code.toUpperCase()}`; }
 const sleep = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 async function saveGame(game: Game, onlyIfMissing = false) {
-  assertStore();
   if (redis) return onlyIfMissing
     ? redis.set(gameKey(game.code), game, { ex: ttlSeconds, nx: true })
     : redis.set(gameKey(game.code), game, { ex: ttlSeconds });
@@ -29,7 +25,7 @@ async function saveGame(game: Game, onlyIfMissing = false) {
 }
 
 async function mutateGame(gameCode: string, mutation: (game: Game) => void) {
-  const normalized = gameCode.toUpperCase(); assertStore();
+  const normalized = gameCode.toUpperCase();
   if (!redis) {
     const game = memoryGames.get(normalized); if (!game) throw new Error("Game not found. Check the code and try again.");
     mutation(game); memoryGames.set(normalized, game); return game;
@@ -62,7 +58,7 @@ export async function createGame() {
   throw new Error("Could not create a unique room. Please try again.");
 }
 export async function getGame(gameCode: string) {
-  assertStore(); const normalized = gameCode.toUpperCase();
+  const normalized = gameCode.toUpperCase();
   return redis ? redis.get<Game>(gameKey(normalized)) : memoryGames.get(normalized);
 }
 export function publicGame(game: Game, playerId?: string, host = false) {

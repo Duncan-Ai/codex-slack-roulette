@@ -12,7 +12,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    if (body.action === "create") { const game = await createGame(); return Response.json({ code: game.code, hostToken: game.hostToken }); }
+    if (body.action === "create") { const game = await createGame(); return Response.json({ code: game.code, hostToken: game.hostToken, game: publicGame(game, undefined, true) }); }
     const game = await getGame(body.code ?? ""); if (!game) return Response.json({ error: "Game not found. Check the code and try again." }, { status: 404 });
     if (body.action === "join") { const result = await joinGame(game.code, String(body.name ?? "").trim()); return Response.json({ playerId: result.player.id, game: publicGame(result.game, result.player.id) }); }
     if (body.action === "answer") { const updated = await answer(game.code, body.playerId, body.value); return Response.json(publicGame(updated, body.playerId)); }

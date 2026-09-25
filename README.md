@@ -20,14 +20,14 @@ Phones poll the game API once per second, so they follow the host automatically 
 
 ## Multiplayer storage
 
-Local development keeps rooms in server memory automatically. A Vercel deployment requires shared Redis storage so every serverless request reads and updates the same room:
+The app works without configuration by keeping rooms in server memory. For reliable games on a multi-instance Vercel deployment, connect shared Redis storage so every serverless request reads and updates the same room:
 
 1. In the Vercel project, open **Storage → Create Database**.
 2. Choose an **Upstash Redis** integration and connect it to the project.
 3. Make sure `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are available to Production and Preview deployments. The older `KV_REST_API_URL` and `KV_REST_API_TOKEN` names are also supported.
 4. Redeploy after connecting the database.
 
-Without those variables, the deployed API deliberately returns a configuration error instead of silently creating different copies of a room across serverless instances. Rooms expire after eight hours.
+When Redis is connected, rooms expire after eight hours. Without Redis, creating and testing a game still works, but a server restart or a request routed to another instance can lose the room.
 
 ## Publish on Vercel
 
